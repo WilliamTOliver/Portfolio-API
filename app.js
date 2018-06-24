@@ -5,6 +5,7 @@ const express = require("express"),
   mongoose = require("mongoose"),
   authRoutes = require('./api/controllers/auth'),
   eventRoutes = require('./api/controllers/event'),
+  chartRoutes = require('./api/controllers/chart'),
   config = require('./config.json'),
   user = config.connection.defaultUser,
   url = `mongodb://${user.username}:${user.password}@${config.connection.location}`;
@@ -30,8 +31,12 @@ app.use((req, res, next) => {
 });
 
 // Routes which should handle requests
+// Shared
 app.use("/auth", authRoutes);
+// Community Dancer
 app.use("/event", eventRoutes);
+// TrevorUI
+app.use("/chart", chartRoutes);
 
 app.use((req, res, next) => {
   const error = new Error("Not found");
