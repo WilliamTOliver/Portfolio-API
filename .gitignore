@@ -2,3 +2,4 @@ node_modules
 nodemon.json
 uploads
 config.json
+services/__pycache__
