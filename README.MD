@@ -20,17 +20,9 @@ Check it out here:
   "password": "[YOUR USER'S PASS]"
   }
   },
-  "serviceEndpoints": {
-  "root": "http://[YOURIP/LocalHost]:5000/",
-  "linear": {
-  "simple": "linear/simple",
-  "multi": "linear/multi"
-  }
-  }
   }`
-  Make sure you have Python 3.4 or newer installed on your machine.
+  The Python in this project is not in an isolated environment and will likely throw errors until you get all dependancies up to date on your machine. I may add documentation to help this process, but that is after I decide whether to extract the python to a service and deploy it as a seperate Flask/other external project to be consumed as any other external API.
 
 The Node portion of this repo acts as an adapter layer to python services for an Angular UI.
 To run the server, simply run `npm run start`
-The Python services are held within the same repo, under /services.
-To run the services, cd into `services` and run `export FLASK_APP=main.py` and `flask run`
+The Python services are held within the same repo, under /services. For now, they are accessed via child_process within the python-shell. This may change and the python may be extracted into a seperate project in the future.
