@@ -1,7 +1,12 @@
 const responseHelper = require('./helpers/responseHelper');
-const machineLearningService = require('./machineLearning');
+const chartBuilder = require('./chartBuilder');
+const Chart = require('../models/chart');
 
-exports.getChartSummaries = (req, res) => {
+exports.getCharts = (req, res) => {
+    Chart.find({}, (err, charts) => {
+        if (err) responseHelper.error(res, 500, err);
+        responseHelper.success(res, 200, charts.map(chartDoc => chartDoc.chart));    
+    });
 };
 
 exports.getChartDetails = (req, res) => {
@@ -12,6 +17,6 @@ exports.buildCharts = (req, res) => {
         if (err) responseHelper.error(res, 500, err);
         responseHelper.success(res, 200, data);
     };
-    machineLearningService.buildCharts(callback)
+    chartBuilder.buildCharts(callback)
 }
 
