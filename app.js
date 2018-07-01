@@ -6,6 +6,7 @@ const express = require("express"),
   authRoutes = require('./adapter/controllers/auth'),
   eventRoutes = require('./adapter/controllers/event'),
   chartRoutes = require('./adapter/controllers/chart'),
+  configRoutes = require('./adapter/controllers/config'),
   config = require('./config.json'),
   user = config.connection.defaultUser,
   url = `mongodb://${user.username}:${user.password}@${config.connection.location}`;
@@ -36,6 +37,7 @@ app.use("/auth", authRoutes);
 // Community Dancer
 app.use("/event", eventRoutes);
 // TrevorUI
+app.use("/config", configRoutes);
 app.use("/chart", chartRoutes);
 
 app.use((req, res, next) => {

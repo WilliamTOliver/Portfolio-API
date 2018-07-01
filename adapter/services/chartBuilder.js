@@ -14,10 +14,11 @@ exports.buildCharts = cb => {
     };
     const buildChartObject = (chartData, chartType) => {
       const chart = {};
+      chart.type = chartData.type;
       chart.xAxis = { type: 'value' };
       chart.yAxis = { type: 'value' };
       switch (chartData.type) {
-        case 'simple-linear':
+        case 'simpleLinear':
           chart.series = [
             {
               color: 'red',
@@ -67,8 +68,6 @@ exports.buildCharts = cb => {
     fs.readdir('./services', function(err, items) {
       let result = [];
       for (let i = 0; i < items.length; i++) {
-        console.log(items.length);
-        console.log(result);
         let item = items[i];
         fs.readdir(`./services/${item}`, function(err, items) {
           let pythonFile = items.filter(
@@ -80,6 +79,7 @@ exports.buildCharts = cb => {
           ) {
             if (err) cb({ message: pythonFile + ' script failed' });
             if (result.length === items.length) cb(null, result);
+            console.log(JSON.parse(data).y, `type ${JSON.parse(data).type}`)
             createChart(buildChartObject(JSON.parse(data)));
           });
         });

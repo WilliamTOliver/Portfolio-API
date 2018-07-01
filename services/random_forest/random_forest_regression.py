@@ -35,7 +35,7 @@ X_grid = np.arange(min(X), max(X), 0.01)
 X_grid = X_grid.reshape((len(X_grid), 1))
 
 print(json.dumps({
-    'type': 'random-forest',
+    'type': 'randomForest',
     'X': X.tolist(),
     'y': y.tolist(),
     'X_grid': X_grid.tolist(),
