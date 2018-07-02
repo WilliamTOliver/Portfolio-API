@@ -54,6 +54,8 @@ print(json.dumps({
     'X': X.tolist(),
     'y': y.tolist(),
     'type': 'polynomial',
+    'name': 'Polynomial Regression',
+    'description': 'polynomial',
     'Y_grid': lin_reg_2.predict(poly_reg.fit_transform(X_grid)).tolist(),
     'X_grid': X_grid.tolist(),
 }))

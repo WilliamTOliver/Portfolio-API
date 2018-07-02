@@ -5,7 +5,7 @@ const Chart = require('../models/chart');
 exports.getCharts = (req, res) => {
     Chart.find({}, (err, charts) => {
         if (err) responseHelper.error(res, 500, err);
-        responseHelper.success(res, 200, charts.map(chartDoc => chartDoc.chart));    
+        responseHelper.success(res, 200, charts);    
     });
 };
 

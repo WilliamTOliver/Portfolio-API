@@ -30,6 +30,8 @@ def main():
     y_pred = regressor.predict(X_test)
     print(json.dumps({
         'type': 'simpleLinear',
+        'name': 'Simple Linear',
+        'description': 'simpleLinear',
         'xTrain': X_train.tolist(),
         'yTrain': y_train.tolist(),
         'xTest': X_test.tolist(),

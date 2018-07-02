@@ -36,6 +36,8 @@ X_grid = X_grid.reshape((len(X_grid), 1))
 
 print(json.dumps({
     'type': 'decisionTree',
+    'name': 'Decision Tree',
+    'description': 'decisionTree',
     'X': X.tolist(),
     'y': y.tolist(),
     'X_grid': X_grid.tolist(),

@@ -36,6 +36,8 @@ X_grid = X_grid.reshape((len(X_grid), 1))
 
 print(json.dumps({
     'type': 'randomForest',
+    'name': 'Random Forest',
+    'description': 'randomForest',
     'X': X.tolist(),
     'y': y.tolist(),
     'X_grid': X_grid.tolist(),

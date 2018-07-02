@@ -5,16 +5,26 @@ exports.buildCharts = cb => {
   const Chart = require('../models/chart');
   Chart.remove({}, err => {
     console.log('Cleared Chart Collection');
-    const createChart = chart => {
+    const createChart = (chart, type, description) => {
       const newChart = new Chart({
         _id: new mongoose.Types.ObjectId(),
-        chart
+        chart,
+        type,
+        description
       });
       newChart.save();
     };
     const buildChartObject = (chartData, chartType) => {
       const chart = {};
-      chart.type = chartData.type;
+      chart.title = {
+        text: chartData.name
+      };
+      chart.tooltip = {
+        trigger: 'axis',
+        axisPointer: {
+            type: 'cross'
+        }
+      },
       chart.xAxis = { type: 'value' };
       chart.yAxis = { type: 'value' };
       switch (chartData.type) {
@@ -22,6 +32,7 @@ exports.buildCharts = cb => {
           chart.series = [
             {
               color: 'red',
+              name: 'Training Set',
               type: 'scatter',
               data: chartData.yTrain.map((yCoord, index) => {
                 return [chartData.xTrain[index][0], yCoord];
@@ -29,6 +40,7 @@ exports.buildCharts = cb => {
             },
             {
               color: 'blue',
+              name: 'Test Set',
               type: 'scatter',
               data: chartData.yTest.map((yCoord, index) => {
                 return [chartData.xTest[index][0], yCoord];
@@ -36,6 +48,7 @@ exports.buildCharts = cb => {
             },
             {
               color: 'gold',
+              name: 'Regression Model',
               type: 'line',
               data: chartData.yPred.map((yCoord, index) => {
                 return [chartData.xTest[index][0], yCoord];
@@ -48,6 +61,7 @@ exports.buildCharts = cb => {
             {
               color: 'red',
               type: 'scatter',
+              name: 'Data',
               data: chartData.y.map((yCoord, index) => {
                 return [chartData.X[index][0], yCoord];
               })
@@ -55,6 +69,7 @@ exports.buildCharts = cb => {
             {
               color: 'blue',
               type: 'line',
+              name: 'Regression Model',
               data: chartData.Y_grid.map((yCoord, index) => {
                 return [chartData.X_grid[index][0], yCoord];
               })
@@ -77,10 +92,14 @@ exports.buildCharts = cb => {
             err,
             data
           ) {
-            if (err) cb({ message: pythonFile + ' script failed' });
-            if (result.length === items.length) cb(null, result);
-            console.log(JSON.parse(data).y, `type ${JSON.parse(data).type}`)
-            createChart(buildChartObject(JSON.parse(data)));
+            if (err) cb({ message: pythonFile + ' script failed', error: err });
+            console.log(err)
+            if (data) {
+              console.log(JSON.parse(data).name + 'script succeeded')
+              const type = JSON.parse(data).type;
+              const description = JSON.parse(data).description;
+              createChart(buildChartObject(JSON.parse(data)), type, description);
+            }
           });
         });
       }
