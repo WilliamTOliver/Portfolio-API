@@ -3,3 +3,4 @@ nodemon.json
 uploads
 config.json
 services/__pycache__
+.vscode

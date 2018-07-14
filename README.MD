@@ -1,3 +1,6 @@
+## Project
+Current changes to this API are planned and tracked in the shared project board under [the UI's GitHub Projects](https://github.com/WilliamTOliver/WTO-Portfolio-UI/projects)
+
 ## Boilerplate
 
 This projects initial setup was based on:
