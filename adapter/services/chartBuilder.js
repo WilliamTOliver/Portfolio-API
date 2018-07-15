@@ -3,14 +3,16 @@ exports.buildCharts = cb => {
   const fs = require('file-system');
   const PythonShell = require('python-shell');
   const Chart = require('../models/chart');
+  const chartOrder = ['simpleLinear', 'polynomial', 'decisionTree', 'randomForest'];
   Chart.remove({}, err => {
     console.log('Cleared Chart Collection');
-    const createChart = (chart, type, description) => {
+    const createChart = (chart, type, description, sortWeight) => {
       const newChart = new Chart({
         _id: new mongoose.Types.ObjectId(),
         chart,
         type,
-        description
+        description,
+        sortWeight
       });
       newChart.save();
     };
@@ -95,10 +97,13 @@ exports.buildCharts = cb => {
             if (err) cb({ message: pythonFile + ' script failed', error: err });
             console.log(err)
             if (data) {
-              console.log(JSON.parse(data).name + 'script succeeded')
-              const type = JSON.parse(data).type;
-              const description = JSON.parse(data).description;
-              createChart(buildChartObject(JSON.parse(data)), type, description);
+              const parsedData = JSON.parse(data);
+              console.log(parsedData.name + 'script succeeded')
+
+              const type = parsedData.type;
+              const description = parsedData.description;
+              const sortWeight = chartOrder.indexOf(parsedData.type);
+              createChart(buildChartObject(parsedData), type, description, sortWeight);
             }
           });
         });

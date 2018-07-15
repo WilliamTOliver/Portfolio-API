@@ -14,7 +14,8 @@ const chartSchema = mongoose.Schema({
     yAxis: { type: { type: String } }
   },
   description: { type: String },
-  type: { type: String }
+  type: { type: String },
+  sortWeight: { type: Number }
 });
 
 module.exports = mongoose.model('Chart', chartSchema);
