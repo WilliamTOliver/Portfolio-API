@@ -1,7 +1,7 @@
 {
-  "name": "rest-shop",
-  "version": "1.0.0",
-  "description": "A Node.js RESTful API Tutorial Project (Build a simple shop API)",
+  "name": "wto-portfolio-api",
+  "version": "0.1.0",
+  "description": "An API for my (William Oliver) personal portofolio site.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,10 +10,11 @@
   "keywords": [
     "node",
     "restful",
+    "python",
     "api"
   ],
-  "author": "Maximilian Schwarzmüller",
-  "license": "ISC",
+  "author": "William Trevor Oliver",
+  "license": "MIT",
   "dependencies": {
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
