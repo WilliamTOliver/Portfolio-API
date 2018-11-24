@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const mongoose = require('mongoose');
 exports.findByEmail = (email) => {
     return User.find({ email }).exec();
 };
@@ -9,8 +10,7 @@ exports.create = (userObject, hashedPassword) => {
     const newUser = new User({
         _id: new mongoose.Types.ObjectId(),
         email: userObject.email,
-        password: hash,
-        application: userObject.application,
+        password: hashedPassword,
         role: userObject.role
     });
     return newUser.save();

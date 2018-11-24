@@ -6,15 +6,23 @@ const express = require("express"),
   authRoutes = require('./adapter/controllers/auth'),
   eventRoutes = require('./adapter/controllers/event'),
   chartRoutes = require('./adapter/controllers/chart'),
-  config = require('./config.json'),
-  user = config.connection.defaultUser,
-  url = `mongodb://${user.username}:${user.password}@${config.connection.location}`;
+  dotenvresult = require('dotenv').config(),
+  url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}`;
+
+if (dotenvresult.error) {
+  throw dotenvresult.error
+} else {
+  // console.log(dotenvresult.parsed)
+}
+
 mongoose.connect(url);
 mongoose.Promise = global.Promise;
 
 app.use(morgan("dev"));
 app.use('/uploads', express.static('uploads'));
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
