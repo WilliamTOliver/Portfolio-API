@@ -4,7 +4,6 @@ const express = require("express"),
   bodyParser = require("body-parser"),
   mongoose = require("mongoose"),
   authRoutes = require('./adapter/controllers/auth'),
-  eventRoutes = require('./adapter/controllers/event'),
   chartRoutes = require('./adapter/controllers/chart'),
   dotenvresult = require('dotenv').config(),
   url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}`;
@@ -37,13 +36,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// Routes which should handle requests
-// Shared
+// Routes
 app.use("/auth", authRoutes);
-// Community Dancer
-app.use("/event", eventRoutes);
-// TrevorUI
 app.use("/chart", chartRoutes);
 
 app.use((req, res, next) => {
