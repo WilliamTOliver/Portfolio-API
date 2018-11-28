@@ -3,7 +3,7 @@ Current changes to this API are planned and tracked in the shared project board 
 
 ## Boilerplate
 
-This projects initial setup was based on:
+This projects initial setup and auth was based on:
 'Creating a RESTful API with Node.js'
 A YouTube series and GitHub repo.
 Check it out here:
@@ -13,19 +13,11 @@ Check it out here:
 
 ### Requirements:
 
-- config.json
-  At root level, create a config.json file and enter values matching the content below.
-  `{
-  "connection": {
-  "location": "[YOURMLAB].mlab.com:[YOURMLABPORT]/[YOURCOLLECTION]",
-  "defaultUser": {
-  "username": "[YOUR USER]",
-  "password": "[YOUR USER'S PASS]"
-  }
-  },
-  }`
-  The Python in this project is not in an isolated environment and will likely throw errors until you get all dependancies up to date on your machine. I may add documentation to help this process, but that is after I decide whether to extract the python to a service and deploy it as a seperate Flask/other external project to be consumed as any other external API.
+- .env This project uses dotenv to manage private info. A quick search through the project for process.env will show the env properties you will need to populate in order to have the project work.
 
-The Node portion of this repo acts as an adapter layer to python services for an Angular UI.
+The Python in this project is part of me experimenting with some machine learning course work in an environment I feel comfortale playing around in and is not in an isolated environment; it will likely throw errors until you get all dependancies up to date on your machine. 
+
 To run the server, simply run `npm run start`
-The Python services are held within the same repo, under /services. For now, they are accessed via child_process within the python-shell. This may change and the python may be extracted into a seperate project in the future.
+The Python services are held within the same repo, under /services. For now, they are accessed via child_process within the python-shell. 
+
+The only current consumer of the Python Scripts in this project is the /build chart endpoint.
