@@ -26,11 +26,35 @@ exports.requestToken = reqbody => {
       return data.body;
     },
     err => {
-      console.log(
-        'Something went wrong when retrieving the access token!',
-        err.message
-      );
-      return err;
+      if (reqbody.spotifyAuth) {
+        // If request sent by valid user whose session has simply expired
+        spotifyApi.setAccessToken(reqbody.spotifyAuth['access_token']);
+        spotifyApi.setRefreshToken(reqbody.spotifyAuth['refresh_token']);
+        spotifyApi.refreshAccessToken().then(
+          function (data) {
+            tokenExpirationEpoch =
+              new Date().getTime() / 1000 + data['expires_in'];
+            console.log(
+              'Refreshed token. It now expires in ' +
+              Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+              ' seconds!'
+            );
+            return data.body;
+          },
+          function (err) {
+            console.log('Could not refresh the token!', err.message);
+            return err;
+
+          });
+
+      } else {
+        // Possibly maliscious request ~ should never reach this in normal flow
+        console.log(
+          'Potentially Maliscious Request: Something went wrong when retrieving the access token!',
+          err.message
+        );
+        return err;
+      }
     }
   );
 };
