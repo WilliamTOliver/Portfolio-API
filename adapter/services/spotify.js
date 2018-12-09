@@ -1,44 +1,36 @@
-const fetch = require('node-fetch'),
-  constants = require('./../constants');
-function hasData(data) {
-  // null check
-  console.log(
-    '​hasData -> process.env.SPOTIFY_CLIENT',
-    process.env.SPOTIFY_CLIENT
-  );
-  console.log(
-    '​hasData -> process.env.SPOTIFY_SECRET',
-    process.env.SPOTIFY_SECRET
-  );
-  return (
-    data.redirect_uri &&
-    data.code &&
-    process.env.SPOTIFY_CLIENT &&
-    process.env.SPOTIFY_SECRET
-  );
-}
+var SpotifyWebApi = require('spotify-web-api-node');
 
-exports.requestToken = data => {
-  if (hasData(data)) {
-    const body = data,
-      method = 'POST';
-    body.grant_type = 'authorization_code';
-    const BasicAuth = `${process.env.SPOTIFY_CLIENT}:${
-        process.env.SPOTIFY_SECRET
-      }`,
-      buff = new Buffer(BasicAuth),
-      Authorization = `Basic ${buff.toString('base64')}`,
-      headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization
-      };
-    console.log({ body, method, headers });
-    return fetch(constants.urls.spotify.requestToken, {
-      body,
-      method,
-      headers,
-    }).then(data => {
-      console.log('​data', data);
-    });
-  }
+
+
+exports.requestToken = reqbody => {
+  // credentials are optional
+  var spotifyApi = new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT,
+    clientSecret: process.env.SPOTIFY_SECRET,
+    redirectUri: process.env.SPOTIFY_REDIRECT
+  });
+  return spotifyApi.authorizationCodeGrant(reqbody.code).then(
+    data => {
+      // Set the access token and refresh token
+      spotifyApi.setAccessToken(data.body['access_token']);
+      spotifyApi.setRefreshToken(data.body['refresh_token']);
+
+      // Save the amount of seconds until the access token expired
+      tokenExpirationEpoch =
+        new Date().getTime() / 1000 + data.body['expires_in'];
+      console.log(
+        'Retrieved token. It expires in ' +
+        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+        ' seconds!'
+      );
+      return data.body;
+    },
+    err => {
+      console.log(
+        'Something went wrong when retrieving the access token!',
+        err.message
+      );
+      return err;
+    }
+  );
 };
