@@ -1,10 +1,16 @@
 var SpotifyWebApi = require('spotify-web-api-node');
 
-function ()
+function createSpotifyApi() {
+  return spotifyApi = new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT,
+    clientSecret: process.env.SPOTIFY_SECRET,
+    redirectUri: process.env.SPOTIFY_REDIRECT
+  });
+}
 
 exports.requestToken = reqbody => {
   // credentials are optional
-
+  var spotifyApi = createSpotifyApi();
   return spotifyApi.authorizationCodeGrant(reqbody.code).then(
     data => {
       // Set the access token and refresh token
@@ -54,3 +60,18 @@ exports.requestToken = reqbody => {
     }
   );
 };
+
+exports.getUserInfo = token => {
+  var spotifyApi = createSpotifyApi();
+
+}
+
+exports.getUserPlaylists = token => {
+  var spotifyApi = createSpotifyApi();
+
+}
+
+exports.search = reqbody => {
+  var spotifyApi = createSpotifyApi();
+
+}
