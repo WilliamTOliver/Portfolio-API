@@ -10,8 +10,8 @@ router.post('/token', checkAuth, (req, res) => {
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
-router.get('/user', checkAuth, (req, res) => {
-  SpotifyService.getUserInfo(req)
+router.get('/user/:token', checkAuth, (req, res) => {
+  SpotifyService.getUserInfo(req.params.token)
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
