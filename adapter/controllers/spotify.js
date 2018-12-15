@@ -15,8 +15,8 @@ router.get('/user/:token', checkAuth, (req, res) => {
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
-router.get('/playlist', checkAuth, (req, res) => {
-  SpotifyService.getUserPlaylists(req.body)
+router.get('/playlist/:token', checkAuth, (req, res) => {
+  SpotifyService.getUserPlaylists(req.params.token)
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });

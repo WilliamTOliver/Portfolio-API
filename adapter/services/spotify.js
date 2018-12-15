@@ -78,7 +78,15 @@ exports.getUserInfo = token => {
 
 exports.getUserPlaylists = token => {
   var spotifyApi = createSpotifyApi();
-  spotifyApi.getUserPlaylists();
+  spotifyApi.setAccessToken(token);
+
+  return spotifyApi.getUserPlaylists()
+  .then(function(data) {
+    return data.body;
+  })
+  .catch(function(err) {
+    console.log('Something went wrong', err.message);
+  });
 };
 
 exports.search = reqbody => {
