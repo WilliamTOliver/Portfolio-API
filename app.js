@@ -10,6 +10,7 @@ const express = require('express'),
   url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${
     process.env.DB_HOST
   }`;
+  localUrl = `mongodb://${process.env.DB_HOST_LOCAL}`;
 
 if (dotenvresult.error) {
   throw dotenvresult.error;
@@ -17,8 +18,12 @@ if (dotenvresult.error) {
   // console.log(dotenvresult.parsed)
 }
 
-mongoose.connect(url);
+// REMOTE CONNECTION
+// mongoose.connect(url);
+// LOCAL CONNECTION
+mongoose.connect(localUrl);
 mongoose.Promise = global.Promise;
+console.log('DB Connection Established at ' + localUrl)
 
 app.use(morgan('dev'));
 app.use('/uploads', express.static('uploads'));
@@ -28,7 +33,6 @@ app.use(
   })
 );
 app.use(bodyParser.json());
-
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header(

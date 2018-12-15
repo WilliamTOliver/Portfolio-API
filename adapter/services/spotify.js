@@ -1,6 +1,7 @@
 var SpotifyWebApi = require('spotify-web-api-node');
 
 function createSpotifyApi() {
+  // https://github.com/thelinmichael/spotify-web-api-node
   return spotifyApi = new SpotifyWebApi({
     clientId: process.env.SPOTIFY_CLIENT,
     clientSecret: process.env.SPOTIFY_SECRET,
@@ -28,7 +29,9 @@ exports.requestToken = reqbody => {
       return data.body;
     },
     err => {
-      if (reqbody.spotifyAuth) {
+				console.log("​err", err)
+				console.log("​reqbody.spotifyAuth", reqbody.spotifyAuth)
+        if (reqbody.spotifyAuth) {
         // If request sent by valid user whose session has simply expired
         spotifyApi.setAccessToken(reqbody.spotifyAuth['access_token']);
         spotifyApi.setRefreshToken(reqbody.spotifyAuth['refresh_token']);
@@ -63,11 +66,39 @@ exports.requestToken = reqbody => {
 
 exports.getUserInfo = token => {
   var spotifyApi = createSpotifyApi();
+  return spotifyApi
+  .authorizationCodeGrant(token)
+  .then(function(data) {
+    console.log('Retrieved access token', data.body['access_token']);
+
+    // Set the access token
+    spotifyApi.setAccessToken(data.body['access_token']);
+
+    // Use the access token to retrieve information about the user connected to it
+    return spotifyApi.getMe();
+  })
+  .then(function(data) {
+    // "Retrieved data for Faruk Sahin"
+    console.log('Retrieved data for ' + data.body['display_name']);
+
+    // "Email is farukemresahin@gmail.com"
+    console.log('Email is ' + data.body.email);
+
+    // "Image URL is http://media.giphy.com/media/Aab07O5PYOmQ/giphy.gif"
+    console.log('Image URL is ' + data.body.images[0].url);
+
+    // "This user has a premium account"
+    console.log('This user has a ' + data.body.product + ' account');
+  })
+  .catch(function(err) {
+    console.log('Something went wrong', err.message);
+  });
 
 }
 
 exports.getUserPlaylists = token => {
   var spotifyApi = createSpotifyApi();
+  spotifyApi.getUserPlaylists()
 
 }
 

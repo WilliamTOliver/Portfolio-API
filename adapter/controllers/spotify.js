@@ -10,5 +10,15 @@ router.post('/token', checkAuth, (req, res) => {
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
+router.get('/user', checkAuth, (req, res) => {
+  SpotifyService.getUserInfo(req)
+    .then(data => responseHelper.success(res, 200, data))
+    .catch(err => responseHelper.error());
+});
+router.get('/playlist', checkAuth, (req, res) => {
+  SpotifyService.getUserPlaylists(req.body)
+    .then(data => responseHelper.success(res, 200, data))
+    .catch(err => responseHelper.error());
+});
 
 module.exports = router;
