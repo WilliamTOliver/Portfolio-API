@@ -23,8 +23,8 @@ exports.requestToken = reqbody => {
         new Date().getTime() / 1000 + data.body['expires_in'];
       console.log(
         'Retrieved token. It expires in ' +
-          Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-          ' seconds!'
+        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+        ' seconds!'
       );
       return data.body;
     },
@@ -35,17 +35,17 @@ exports.requestToken = reqbody => {
         spotifyApi.setAccessToken(reqbody.spotifyAuth['access_token']);
         spotifyApi.setRefreshToken(reqbody.spotifyAuth['refresh_token']);
         spotifyApi.refreshAccessToken().then(
-          function(data) {
+          function (data) {
             tokenExpirationEpoch =
               new Date().getTime() / 1000 + data['expires_in'];
             console.log(
               'Refreshed token. It now expires in ' +
-                Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-                ' seconds!'
+              Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+              ' seconds!'
             );
             return data.body;
           },
-          function(err) {
+          function (err) {
             console.log('Could not refresh the token!', err.message);
             return err;
           }
@@ -68,10 +68,10 @@ exports.getUserInfo = token => {
   // Use the access token to retrieve information about the user connected to it
   return spotifyApi
     .getMe()
-    .then(function(data) {
+    .then(function (data) {
       return data.body;
     })
-    .catch(function(err) {
+    .catch(function (err) {
       console.log('Something went wrong', err.message);
     });
 };
@@ -81,14 +81,21 @@ exports.getUserPlaylists = token => {
   spotifyApi.setAccessToken(token);
 
   return spotifyApi.getUserPlaylists()
-  .then(function(data) {
-    return data.body;
-  })
-  .catch(function(err) {
-    console.log('Something went wrong', err.message);
-  });
+    .then(function (data) {
+      return data.body;
+    })
+    .catch(function (err) {
+      console.log('Something went wrong', err.message);
+    });
 };
 
-exports.search = reqbody => {
+exports.getPlaylistTracks = (id, token, offset) => {
   var spotifyApi = createSpotifyApi();
+  spotifyApi.setAccessToken(token);
+  return spotifyApi.getPlaylistTracks(id, {
+    offset: offset || 0
+  }).then(tracks => {
+    return tracks.body.items;
+  }).catch(console.log);
+
 };

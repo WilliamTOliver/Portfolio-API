@@ -20,5 +20,10 @@ router.get('/user/playlists', checkAuth, (req, res) => {
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
+router.get('/playlist/:id/tracks', checkAuth, (req, res) => {
+  SpotifyService.getPlaylistTracks(req.params.id, req.get(SpotifyAuthHeader))
+    .then(data => responseHelper.success(res, 200, data))
+    .catch(err => responseHelper.error());
+});
 
 module.exports = router;
