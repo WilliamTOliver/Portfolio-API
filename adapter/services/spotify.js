@@ -23,8 +23,8 @@ exports.requestToken = reqbody => {
         new Date().getTime() / 1000 + data.body['expires_in'];
       console.log(
         'Retrieved token. It expires in ' +
-        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-        ' seconds!'
+          Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+          ' seconds!'
       );
       return data.body;
     },
@@ -35,17 +35,17 @@ exports.requestToken = reqbody => {
         spotifyApi.setAccessToken(reqbody.spotifyAuth['access_token']);
         spotifyApi.setRefreshToken(reqbody.spotifyAuth['refresh_token']);
         spotifyApi.refreshAccessToken().then(
-          function (data) {
+          function(data) {
             tokenExpirationEpoch =
               new Date().getTime() / 1000 + data['expires_in'];
             console.log(
               'Refreshed token. It now expires in ' +
-              Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-              ' seconds!'
+                Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                ' seconds!'
             );
             return data.body;
           },
-          function (err) {
+          function(err) {
             console.log('Could not refresh the token!', err.message);
             return err;
           }
@@ -68,10 +68,10 @@ exports.getUserInfo = token => {
   // Use the access token to retrieve information about the user connected to it
   return spotifyApi
     .getMe()
-    .then(function (data) {
+    .then(function(data) {
       return data.body;
     })
-    .catch(function (err) {
+    .catch(function(err) {
       console.log('Something went wrong', err.message);
     });
 };
@@ -80,22 +80,58 @@ exports.getUserPlaylists = token => {
   var spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
 
-  return spotifyApi.getUserPlaylists()
-    .then(function (data) {
-      return data.body;
+  return spotifyApi
+    .getUserPlaylists()
+    .then(function(data) {
+      return data.body.items.map(playlist => {
+        return {
+          id: playlist.id,
+          image:
+            playlist.images &&
+            playlist.images.length > 0 &&
+            playlist.images[0].url,
+          name: playlist.name,
+          numTracks: playlist.tracks.total
+        };
+      });
     })
-    .catch(function (err) {
+    .catch(function(err) {
       console.log('Something went wrong', err.message);
     });
 };
 
-exports.getPlaylistTracks = (id, token, offset) => {
+exports.getPlaylistTracks = async (id, token, offset) => {
   var spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
-  return spotifyApi.getPlaylistTracks(id, {
-    offset: offset || 0
-  }).then(tracks => {
-    return tracks.body.items;
-  }).catch(console.log);
-
+  return await getTracksForPlaylist(id);
 };
+function formatTracks(items) {
+  return items.map( item => {
+    return {
+      id: item.track.id,
+      name: item.track.name,
+      album: item.track.album.name,
+      artists: item.track.artists.map(artist => artist.name),
+      added_at: item.added_at,
+      popularity: item.track.popularity
+    }
+  })
+}
+async function getTracksForPlaylist(id) {
+  let done = false,
+    offset = 0,
+    alltracks = [];
+  while (!done) {
+    const response = await spotifyApi.getPlaylistTracks(id, {
+      offset
+    });
+    
+    alltracks = alltracks.concat(formatTracks(response.body.items));
+    if (response.body.next !== null) {
+      offset = offset + 100;
+    } else {
+      done = true;
+      return alltracks
+    }
+  }
+}
