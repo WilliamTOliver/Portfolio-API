@@ -107,11 +107,12 @@ exports.getPlaylistTracks = async (id, token, offset) => {
 };
 function formatTracks(items) {
   return items.map( item => {
+    const artistsNames = item.track.artists.map(artist => artist.name);
     return {
       id: item.track.id,
       name: item.track.name,
       album: item.track.album.name,
-      artists: item.track.artists.map(artist => artist.name),
+      artist: artistsNames.length > 1 ? artistsNames.join(', ') : artistsNames[0],
       added_at: item.added_at,
       popularity: item.track.popularity
     }
