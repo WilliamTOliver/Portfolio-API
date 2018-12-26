@@ -25,5 +25,10 @@ router.get('/playlist/:id/tracks', checkAuth, (req, res) => {
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
+router.post('/playlist/:id/refactor', checkAuth, (req, res) => {
+  SpotifyService.refactorBy(req.params.id, req.get(SpotifyAuthHeader), 'year')
+    .then(data => responseHelper.success(res, 200, data))
+    .catch(err => responseHelper.error());
+});
 
 module.exports = router;
