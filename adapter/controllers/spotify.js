@@ -26,7 +26,7 @@ router.get('/playlist/:id/tracks', checkAuth, (req, res) => {
     .catch(err => responseHelper.error());
 });
 router.post('/playlist/:id/refactor', checkAuth, (req, res) => {
-  SpotifyService.refactorBy(req.params.id, req.get(SpotifyAuthHeader), 'year')
+  SpotifyService.refactorBy(req.params.id, req.get(SpotifyAuthHeader), req.body)
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error());
 });
