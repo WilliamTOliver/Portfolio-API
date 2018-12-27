@@ -89,9 +89,7 @@ exports.refactorBy = async (id, token, body) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   try {
-    console.log('trying');
     const tracks = await getTracksForPlaylist(id, spotifyApi);
-    console.log('​exports.refactorBy -> tracks', tracks.length);
     const trackIds = tracks.map((track) => track.id);
     const features = await getTracksFeatures(trackIds, spotifyApi);
     const tracksWithFeatures = tracks.map((track, i) => {
@@ -107,14 +105,34 @@ exports.refactorBy = async (id, token, body) => {
         const user = await spotifyApi.getMe();
         playlistNameRoot = body.playlistName + ' Split-By ' + body.by;
         const resolved = [];
-        const groupBy = constants.translatedGroupByPaths[body.by];
-        const groupedTrackSets = _.groupBy(tracksWithFeatures, (value) => {
-          return _.get(value, groupBy);
-        });
+        const groupBy = constants.translatedRefactorBy[body.by].path;
+        const isRange = constants.translatedRefactorBy[body.by].isRange;
+        let groupedTrackSets;
+        if (isRange) {
+          groupedTrackSets = {};
+          const sortedTracks = _.sortBy(tracksWithFeatures, function (value) {
+            return _.get(value, groupBy);
+          });
+          let i,
+            j,
+            chunkOTracks,
+            chunkSize = Math.ceil(sortedTracks.length / 2);
+          for (i = 0, j = sortedTracks.length; i < j; i += chunkSize) {
+            chunkOTracks = sortedTracks.slice(i, i + chunkSize);
+            const trackSetKey = i === 0 ? 'lower' : 'higher';
+            groupedTrackSets[trackSetKey] = chunkOTracks;
+          }
+
+        } else {
+          groupedTrackSets = _.groupBy(tracksWithFeatures, (value) => {
+            return _.get(value, groupBy);
+          });
+        }
+
         const uniqueGroupByKeys = Object.keys(groupedTrackSets);
         const trackURISets = uniqueGroupByKeys.map((key) => groupedTrackSets[key].map((obj) => obj.track.uri));
         trackURISets.map((groupedPlaylist, index) => {
-          const newPlaylistName = playlistNameRoot + index;
+          const newPlaylistName = playlistNameRoot + ' ' + uniqueGroupByKeys[index];
           resolved.push(
             spotifyApi
             .createPlaylist(user.body.id, newPlaylistName)
@@ -147,11 +165,27 @@ exports.refactorBy = async (id, token, body) => {
         break;
       case 'reorder':
         playlistNameRoot = body.playlistName + ' Reordered-By ' + body.by;
-        const sortedTrackIds = _.sortBy(tracksWithFeatures, body.by).map((track) => track.uri);
+        const sortBy = constants.translatedRefactorBy[body.by].path;
+        const sortedTrackUris = _.sortBy(tracksWithFeatures, value => {
+          return _.get(value, sortBy);
+        }).map((obj) => obj.track.uri);
         return spotifyApi.createPlaylist(body.userId, playlistNameRoot).then((playlist) => {
-          return spotifyApi.addTracksToPlaylist(playlist.id, sortedTrackIds).then((response) => {
-            return response;
-          });
+          if (sortedTrackUris.length <= 100) {
+            return spotifyApi.addTracksToPlaylist(playlist.body.id, sortedTrackUris);
+          } else {
+            let i,
+              j,
+              chunkOTracks,
+              chunkSize = 100,
+              allResolved = [];
+            for (i = 0, j = sortedTrackUris.length; i < j; i += chunkSize) {
+              chunkOTracks = sortedTrackUris.slice(i, i + chunkSize);
+              allResolved.push(spotifyApi.addTracksToPlaylist(playlist.body.id, chunkOTracks));
+              if (allResolved.length === Math.ceil(sortedTrackUris / chunkSize)) {
+                return Promise.all(allResolved);
+              }
+            }
+          }
         });
         break;
       default:

@@ -3,15 +3,45 @@ exports.urls = {
         requestToken: 'https://accounts.spotify.com/api/token',
     }
 }
-exports.translatedGroupByPaths = {
-    year: 'track.year',
-    artist: 'track.artist',
-    popularity: 'track.popularity',
-    energy: 'features.energy',
-    mood: 'features.valence',
-    acousticness: 'features.acousticness',
-    instrumentalness: 'features.instrumentalness',
-    tempo: 'features.tempo',
-    time_signature: 'features.time_signature',
-    danceability: 'features.danceability'
+exports.translatedRefactorBy = {
+    year: {
+        path: 'track.year',
+        isRange: false
+    },
+    key: {
+        path: 'features.key',
+        isRange: false
+    },
+    popularity: {
+        path: 'track.popularity',
+        isRange: true
+    },
+    energy: {
+        path: 'features.energy',
+        isRange: true
+    },
+    mood: {
+        path: 'features.valence',
+        isRange: true
+    },
+    acousticness: {
+        path: 'features.acousticness',
+        isRange: true
+    },
+    instrumentalness: {
+        path: 'features.instrumentalness',
+        isRange: true
+    },
+    tempo: {
+        path: 'features.tempo',
+        isRange: true
+    },
+    time_signature: {
+        path: 'features.time_signature',
+        isRange: false
+    },
+    danceability: {
+        path: 'features.danceability',
+        isRange: true
+    }
 }
