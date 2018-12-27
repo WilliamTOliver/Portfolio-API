@@ -100,9 +100,9 @@ exports.refactorBy = async (id, token, body) => {
       };
     });
     let playlistNameRoot;
+    const user = await spotifyApi.getMe();
     switch (body.method) {
       case 'split':
-        const user = await spotifyApi.getMe();
         playlistNameRoot = body.playlistName + ' Split-By ' + body.by;
         const resolved = [];
         const groupBy = constants.translatedRefactorBy[body.by].path;
@@ -169,9 +169,11 @@ exports.refactorBy = async (id, token, body) => {
         const sortedTrackUris = _.sortBy(tracksWithFeatures, value => {
           return _.get(value, sortBy);
         }).map((obj) => obj.track.uri);
-        return spotifyApi.createPlaylist(body.userId, playlistNameRoot).then((playlist) => {
+        return spotifyApi.createPlaylist(user.body.id, playlistNameRoot).then((playlist) => {
           if (sortedTrackUris.length <= 100) {
-            return spotifyApi.addTracksToPlaylist(playlist.body.id, sortedTrackUris);
+            return spotifyApi.addTracksToPlaylist(playlist.body.id, sortedTrackUris).catch(e => {
+              console.log('Error ocurred in creating playlist on reorder ', e)
+            });
           } else {
             let i,
               j,
@@ -182,10 +184,14 @@ exports.refactorBy = async (id, token, body) => {
               chunkOTracks = sortedTrackUris.slice(i, i + chunkSize);
               allResolved.push(spotifyApi.addTracksToPlaylist(playlist.body.id, chunkOTracks));
               if (allResolved.length === Math.ceil(sortedTrackUris / chunkSize)) {
-                return Promise.all(allResolved);
+                return Promise.all(allResolved).catch(e => {
+                  console.log('Error ocurred in creating playlist on reorder ', e)
+                });
               }
             }
           }
+        }).catch(e => {
+          console.log('Error ocurred in creating playlist on reorder ', e)
         });
         break;
       default:
