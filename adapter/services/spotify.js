@@ -1,27 +1,24 @@
 const SpotifyWebApi = require('spotify-web-api-node');
 const _ = require('lodash');
 
-const constants = require('./../constants')
+const constants = require('./../constants');
 
 // Public Methods
-exports.requestToken = reqbody => {
+exports.requestToken = (reqbody) => {
   const spotifyApi = createSpotifyApi();
   return spotifyApi.authorizationCodeGrant(reqbody.code).then(
-    data => {
+    (data) => {
       // Set the access token and refresh token
       spotifyApi.setAccessToken(data.body['access_token']);
       spotifyApi.setRefreshToken(data.body['refresh_token']);
       // Save the amount of seconds until the access token expired
-      tokenExpirationEpoch =
-        new Date().getTime() / 1000 + data.body['expires_in'];
+      tokenExpirationEpoch = new Date().getTime() / 1000 + data.body['expires_in'];
       console.log(
-        'Retrieved token. It expires in ' +
-        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-        ' seconds!'
+        'Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!'
       );
       return data.body;
     },
-    err => {
+    (err) => {
       console.log('​reqbody.spotifyAuth', reqbody.spotifyAuth);
       if (reqbody.spotifyAuth) {
         // If request sent by valid user whose session has simply expired
@@ -29,8 +26,7 @@ exports.requestToken = reqbody => {
         spotifyApi.setRefreshToken(reqbody.spotifyAuth['refresh_token']);
         spotifyApi.refreshAccessToken().then(
           function (data) {
-            tokenExpirationEpoch =
-              new Date().getTime() / 1000 + data['expires_in'];
+            tokenExpirationEpoch = new Date().getTime() / 1000 + data['expires_in'];
             console.log(
               'Refreshed token. It now expires in ' +
               Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
@@ -55,7 +51,7 @@ exports.requestToken = reqbody => {
   );
 };
 
-exports.getUserInfo = token => {
+exports.getUserInfo = (token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   // Use the access token to retrieve information about the user connected to it
@@ -69,19 +65,17 @@ exports.getUserInfo = token => {
     });
 };
 
-exports.getUserPlaylists = token => {
+exports.getUserPlaylists = (token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   return spotifyApi
     .getUserPlaylists()
     .then(function (data) {
       console.log(data.body.items);
-      return data.body.items.map(playlist => {
+      return data.body.items.map((playlist) => {
         return {
           id: playlist.id,
-          image: playlist.images &&
-            playlist.images.length > 0 &&
-            playlist.images[0].url,
+          image: playlist.images && playlist.images.length > 0 && playlist.images[0].url,
           name: playlist.name,
           numTracks: playlist.tracks.total
         };
@@ -95,51 +89,67 @@ exports.refactorBy = async (id, token, body) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   try {
+    console.log('trying');
     const tracks = await getTracksForPlaylist(id, spotifyApi);
-    const trackIds = tracks.map(track => track.id);
+    console.log('​exports.refactorBy -> tracks', tracks.length);
+    const trackIds = tracks.map((track) => track.id);
     const features = await getTracksFeatures(trackIds, spotifyApi);
     const tracksWithFeatures = tracks.map((track, i) => {
       track.year = track.added_at ? track.added_at.slice(0, 4) : '';
       return {
         track,
-        features: features.audio_features[i]
+        features: features[i]
       };
     });
     let playlistNameRoot;
     switch (body.method) {
       case 'split':
-        const user = await spotifyApi.getMe()
-        playlistNameRoot = body.playlistName + ' ~ Split-By ' + body.by;
+        const user = await spotifyApi.getMe();
+        playlistNameRoot = body.playlistName + ' Split-By ' + body.by;
         const resolved = [];
         const groupBy = constants.translatedGroupByPaths[body.by];
         const groupedTrackSets = _.groupBy(tracksWithFeatures, (value) => {
           return _.get(value, groupBy);
         });
-        const uniqueGroupByValues = Object.keys(groupedTrackSets);
-        const trackURISets = uniqueGroupByValues
-          .map(key => groupedTrackSets[key]
-            .map(obj => obj.track.uri));
-        trackURISets
-          .map((groupedPlaylist, index) => {
-            const newPlaylistName = playlistNameRoot + index;
-            resolved.push(spotifyApi.createPlaylist(user.body.id, newPlaylistName).then(async (playlist) => {
+        const uniqueGroupByKeys = Object.keys(groupedTrackSets);
+        const trackURISets = uniqueGroupByKeys.map((key) => groupedTrackSets[key].map((obj) => obj.track.uri));
+        trackURISets.map((groupedPlaylist, index) => {
+          const newPlaylistName = playlistNameRoot + index;
+          resolved.push(
+            spotifyApi
+            .createPlaylist(user.body.id, newPlaylistName)
+            .then(async (playlist) => {
               try {
-                console.log(groupedPlaylist.length)
-                return await spotifyApi.addTracksToPlaylist(playlist.body.id, groupedPlaylist);
+                if (groupedPlaylist.length <= 100) {
+                  return spotifyApi.addTracksToPlaylist(playlist.body.id, groupedPlaylist);
+                } else {
+                  let i,
+                    j,
+                    chunkOTracks,
+                    chunkSize = 100,
+                    allResolved = [];
+                  for (i = 0, j = groupedPlaylist.length; i < j; i += chunkSize) {
+                    chunkOTracks = groupedPlaylist.slice(i, i + chunkSize);
+                    allResolved.push(spotifyApi.addTracksToPlaylist(playlist.body.id, chunkOTracks));
+                    if (allResolved.length === Math.ceil(groupedPlaylist / chunkSize)) {
+                      return Promise.all(allResolved);
+                    }
+                  }
+                }
               } catch (e) {
-                console.log("catch -> e", e)
-                return e;
+                console.log('When either creating playlist or adding tracks to said playlist -> e', e);
               }
-            }));
-          });
-        return await Promise.all(resolved);
+            })
+            .catch(console.log)
+          );
+        });
+        return Promise.all(resolved);
         break;
       case 'reorder':
-        playlistNameRoot = body.playlistName + ' ~ Reordered-By ' + body.by;
-        const sortedTrackIds = _.sortBy(tracksWithFeatures, body.by)
-          .map(track => track.id);
-        return spotifyApi.createPlaylist(body.userId, playlistNameRoot).then(playlist => {
-          return spotifyApi.addTracksToPlaylist(playlist.id, sortedTrackIds).then(response => {
+        playlistNameRoot = body.playlistName + ' Reordered-By ' + body.by;
+        const sortedTrackIds = _.sortBy(tracksWithFeatures, body.by).map((track) => track.uri);
+        return spotifyApi.createPlaylist(body.userId, playlistNameRoot).then((playlist) => {
+          return spotifyApi.addTracksToPlaylist(playlist.id, sortedTrackIds).then((response) => {
             return response;
           });
         });
@@ -148,10 +158,10 @@ exports.refactorBy = async (id, token, body) => {
         // No passed in method, only options are opinionated(smart) or simple numerical split;
         switch (body.by) {
           case 'smart':
-            console.log('wip')
+            console.log('wip');
             break;
           case 'simple':
-            console.log('wip')
+            console.log('wip');
             break;
         }
         break;
@@ -159,10 +169,8 @@ exports.refactorBy = async (id, token, body) => {
   } catch (e) {
     console.log(e);
   }
-
-
 };
-exports.getPlaylistTracks = async (id, token, offset) => {
+exports.getPlaylistTracks = async (id, token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   return await getTracksForPlaylist(id, spotifyApi);
@@ -179,8 +187,8 @@ function createSpotifyApi() {
 }
 
 function formatTracks(items) {
-  return items.map(item => {
-    const artistsNames = item.track.artists.map(artist => artist.name);
+  return items.map((item) => {
+    const artistsNames = item.track.artists.map((artist) => artist.name);
     return {
       id: item.track.id,
       uri: item.track.uri,
@@ -212,6 +220,26 @@ async function getTracksForPlaylist(id, spotifyApi) {
 }
 
 async function getTracksFeatures(trackIds, spotifyApi) {
-  const response = await spotifyApi.getAudioFeaturesForTracks(trackIds);
-  return response.body;
+  if (trackIds.length <= 100) {
+    const response = await spotifyApi.getAudioFeaturesForTracks(trackIds);
+    return response.body.audio_features;
+  } else {
+    let i,
+      j,
+      chunkOTracks,
+      chunkSize = 100,
+      allTracksWithFeatures = [];
+    for (i = 0, j = trackIds.length; i < j; i += chunkSize) {
+      chunkOTracks = trackIds.slice(i, i + chunkSize);
+      try {
+        const response = await spotifyApi.getAudioFeaturesForTracks(chunkOTracks);
+        allTracksWithFeatures = allTracksWithFeatures.concat(response.body.audio_features);
+        if (allTracksWithFeatures.length === trackIds.length) {
+          return allTracksWithFeatures;
+        }
+      } catch (e) {
+        console.log('Error occurred in getTracksFeatures', e);
+      }
+    }
+  }
 }
