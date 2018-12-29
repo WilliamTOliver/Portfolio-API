@@ -4,7 +4,6 @@ const express = require('express'),
   bodyParser = require('body-parser'),
   mongoose = require('mongoose'),
   authRoutes = require('./adapter/controllers/auth'),
-  chartRoutes = require('./adapter/controllers/chart'),
   spotifyRoutes = require('./adapter/controllers/spotify'),
   dotenvresult = require('dotenv').config(),
   url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${
@@ -47,7 +46,6 @@ app.use((req, res, next) => {
 });
 // Routes
 app.use('/auth', authRoutes);
-app.use('/chart', chartRoutes);
 app.use('/spotify', spotifyRoutes);
 
 app.use((req, res, next) => {
