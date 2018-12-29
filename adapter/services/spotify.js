@@ -72,7 +72,9 @@ exports.getUserPlaylists = (token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   return spotifyApi
-    .getUserPlaylists({limit: 50})
+    .getUserPlaylists({
+      limit: 50
+    })
     .then(function (data) {
       return data.body.items.map((playlist) => {
         return {
@@ -210,47 +212,37 @@ exports.refactorBy = async (id, token, body) => {
         }
         break;
       default:
-        // No passed in method, only options are opinionated(smart) or simple numerical split;
-        switch (body.by) {
-          case 'smart':
-            console.log('wip');
-            break;
-          case 'simple':
-          /**
-           * Clones playlist into two playlists each with half of the tracks of the original.
-           */
-          playlistNameRoot = body.playlistName + ' Simple Split';
-          const simpleSplitTrackSets = {};
-          let i,
-            j,
-            chunkOTracks,
-            chunkSize = Math.ceil(tracksWithFeatures.length / 2);
-          for (i = 0, j = tracksWithFeatures.length; i < j; i += chunkSize) {
-            chunkOTracks = tracksWithFeatures.slice(i, i + chunkSize);
-            const trackSetKey = i === 0 ? 'A' : 'B';
-            simpleSplitTrackSets[trackSetKey] = chunkOTracks;
-          }
-          const uniqueGroupByKeys = Object.keys(simpleSplitTrackSets);
-          const trackURISets = uniqueGroupByKeys.map((key) => simpleSplitTrackSets[key].map((obj) => obj.track.uri));
-          const resolved = [];
-          trackURISets.map((groupedPlaylist, index) => {
-            const newPlaylistName = playlistNameRoot + ' ' + uniqueGroupByKeys[index];
-            resolved.push(
-              spotifyApi
-              .createPlaylist(user.body.id, newPlaylistName)
-              .then(async (playlist) => {
-                try {
-                  return await addTracksToPlaylist(spotifyApi, groupedPlaylist, playlist.body.id);
-                } catch (e) {
-                  console.log('error occurred in refactor-split -> e', e);
-                }
-              })
-              .catch(console.log)
-            );
-          });
-          return Promise.all(resolved);
-            break;
+        // Simple Split
+        playlistNameRoot = body.playlistName + ' Simple Split';
+        const simpleSplitTrackSets = {};
+        let i,
+          j,
+          chunkOTracks,
+          chunkSize = Math.ceil(tracksWithFeatures.length / 2);
+        for (i = 0, j = tracksWithFeatures.length; i < j; i += chunkSize) {
+          chunkOTracks = tracksWithFeatures.slice(i, i + chunkSize);
+          const trackSetKey = i === 0 ? 'A' : 'B';
+          simpleSplitTrackSets[trackSetKey] = chunkOTracks;
         }
+        const uniqueGroupByKeys = Object.keys(simpleSplitTrackSets);
+        const trackURISets = uniqueGroupByKeys.map((key) => simpleSplitTrackSets[key].map((obj) => obj.track.uri));
+        const resolved = [];
+        trackURISets.map((groupedPlaylist, index) => {
+          const newPlaylistName = playlistNameRoot + ' ' + uniqueGroupByKeys[index];
+          resolved.push(
+            spotifyApi
+            .createPlaylist(user.body.id, newPlaylistName)
+            .then(async (playlist) => {
+              try {
+                return await addTracksToPlaylist(spotifyApi, groupedPlaylist, playlist.body.id);
+              } catch (e) {
+                console.log('error occurred in refactor-split -> e', e);
+              }
+            })
+            .catch(console.log)
+          );
+        });
+        return Promise.all(resolved);
         break;
     }
   } catch (e) {
