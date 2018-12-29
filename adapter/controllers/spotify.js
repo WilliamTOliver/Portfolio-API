@@ -35,6 +35,11 @@ router.post('/playlist/unfollow-multi', checkAuth, (req, res) => {
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error(res, err.status || 500, err));
 });
+router.post('/playlist/follow-multi', checkAuth, (req, res) => {
+  SpotifyService.followPlaylists(req.body.ids, req.get(SpotifyAuthHeader))
+    .then(data => responseHelper.success(res, 200, data))
+    .catch(err => responseHelper.error(res, err.status || 500, err));
+});
 router.get('/playlist/:id/tracks', checkAuth, (req, res) => {
   SpotifyService.getPlaylistTracks(req.params.id, req.get(SpotifyAuthHeader))
     .then(data => responseHelper.success(res, 200, data))

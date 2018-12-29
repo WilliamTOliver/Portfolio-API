@@ -113,6 +113,12 @@ exports.unfollowPlaylists = (ids, token) => {
   return Promise.all(ids.map(id => spotifyApi.unfollowPlaylist(id)));
 }
 
+exports.followPlaylists = (ids, token) => {
+  const spotifyApi = createSpotifyApi();
+  spotifyApi.setAccessToken(token);
+  return Promise.all(ids.map(id => spotifyApi.followPlaylist(id)));
+}
+
 exports.getPlaylistTracks = async (id, token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
