@@ -31,7 +31,7 @@ router.delete('/playlist/:id', checkAuth, (req, res) => {
     .catch(err => responseHelper.error(res, err.status || 500, err));
 });
 router.post('/playlist/unfollow-multi', checkAuth, (req, res) => {
-  SpotifyService.unfollowPlaylists(req.body.playlists, req.get(SpotifyAuthHeader))
+  SpotifyService.unfollowPlaylists(req.body.ids, req.get(SpotifyAuthHeader))
     .then(data => responseHelper.success(res, 200, data))
     .catch(err => responseHelper.error(res, err.status || 500, err));
 });
