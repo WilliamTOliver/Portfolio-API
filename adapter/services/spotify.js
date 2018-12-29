@@ -72,7 +72,7 @@ exports.getUserPlaylists = (token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
   return spotifyApi
-    .getUserPlaylists()
+    .getUserPlaylists({limit: 50})
     .then(function (data) {
       return data.body.items.map((playlist) => {
         return {
