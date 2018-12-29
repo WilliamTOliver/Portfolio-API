@@ -3,7 +3,9 @@ const _ = require('lodash');
 
 const constants = require('./../constants');
 
-// Public Methods
+// PUBLIC
+
+// AUTH
 exports.requestToken = (reqbody) => {
   const spotifyApi = createSpotifyApi();
   return spotifyApi.authorizationCodeGrant(reqbody.code).then(
@@ -51,6 +53,7 @@ exports.requestToken = (reqbody) => {
   );
 };
 
+// USER
 exports.getUserInfo = (token) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
@@ -71,7 +74,6 @@ exports.getUserPlaylists = (token) => {
   return spotifyApi
     .getUserPlaylists()
     .then(function (data) {
-      console.log(data.body.items);
       return data.body.items.map((playlist) => {
         return {
           id: playlist.id,
@@ -85,6 +87,38 @@ exports.getUserPlaylists = (token) => {
       console.log('Something went wrong', err.message);
     });
 };
+
+// PLAYLIST
+exports.createPlaylist = async (body, token) => {
+  const spotifyApi = createSpotifyApi();
+  spotifyApi.setAccessToken(token);
+  try {
+    const user = await spotifyApi.getMe();
+    const createdPlaylist = await spotifyApi.createPlaylist(user.body.id, body.name);
+    return await addTracksToPlaylist(spotifyApi, body.tracks, createdPlaylist.body.id);
+  } catch (e) {
+    console.log('error occurred in creating a playlist -> ', e);
+  }
+};
+
+exports.unfollowPlaylist = (id, token) => {
+  const spotifyApi = createSpotifyApi();
+  spotifyApi.setAccessToken(token);
+  return spotifyApi.unfollowPlaylist(id);
+}
+
+exports.unfollowPlaylists = (ids, token) => {
+  const spotifyApi = createSpotifyApi();
+  spotifyApi.setAccessToken(token);
+  return Promise.all(ids.map(id => spotifyApi.unfollowPlaylist(id)));
+}
+
+exports.getPlaylistTracks = async (id, token) => {
+  const spotifyApi = createSpotifyApi();
+  spotifyApi.setAccessToken(token);
+  return await getTracksForPlaylist(id, spotifyApi);
+};
+
 exports.refactorBy = async (id, token, body) => {
   const spotifyApi = createSpotifyApi();
   spotifyApi.setAccessToken(token);
@@ -103,8 +137,13 @@ exports.refactorBy = async (id, token, body) => {
     const user = await spotifyApi.getMe();
     switch (body.method) {
       case 'split':
+        /**
+         * Creates A Set of New Playlists grouped by body.by
+         * (if year, playlist will be split into new playlists based on year added ->
+         * MyPlaylist gets cloned into MyPlaylist 2018, MyPlaylist 2019...)
+         * More fine tuned 'isRange' values will be cloned into two playlists with higher and lower values ex: dandability
+         */
         playlistNameRoot = body.playlistName + ' Split-By ' + body.by;
-        const resolved = [];
         const groupBy = constants.translatedRefactorBy[body.by].path;
         const isRange = constants.translatedRefactorBy[body.by].isRange;
         let groupedTrackSets;
@@ -122,7 +161,6 @@ exports.refactorBy = async (id, token, body) => {
             const trackSetKey = i === 0 ? 'lower' : 'higher';
             groupedTrackSets[trackSetKey] = chunkOTracks;
           }
-
         } else {
           groupedTrackSets = _.groupBy(tracksWithFeatures, (value) => {
             return _.get(value, groupBy);
@@ -131,6 +169,7 @@ exports.refactorBy = async (id, token, body) => {
 
         const uniqueGroupByKeys = Object.keys(groupedTrackSets);
         const trackURISets = uniqueGroupByKeys.map((key) => groupedTrackSets[key].map((obj) => obj.track.uri));
+        const resolved = [];
         trackURISets.map((groupedPlaylist, index) => {
           const newPlaylistName = playlistNameRoot + ' ' + uniqueGroupByKeys[index];
           resolved.push(
@@ -138,24 +177,9 @@ exports.refactorBy = async (id, token, body) => {
             .createPlaylist(user.body.id, newPlaylistName)
             .then(async (playlist) => {
               try {
-                if (groupedPlaylist.length <= 100) {
-                  return spotifyApi.addTracksToPlaylist(playlist.body.id, groupedPlaylist);
-                } else {
-                  let i,
-                    j,
-                    chunkOTracks,
-                    chunkSize = 100,
-                    allResolved = [];
-                  for (i = 0, j = groupedPlaylist.length; i < j; i += chunkSize) {
-                    chunkOTracks = groupedPlaylist.slice(i, i + chunkSize);
-                    allResolved.push(spotifyApi.addTracksToPlaylist(playlist.body.id, chunkOTracks));
-                    if (allResolved.length === Math.ceil(groupedPlaylist / chunkSize)) {
-                      return Promise.all(allResolved);
-                    }
-                  }
-                }
+                return await addTracksToPlaylist(spotifyApi, groupedPlaylist, playlist.body.id);
               } catch (e) {
-                console.log('When either creating playlist or adding tracks to said playlist -> e', e);
+                console.log('error occurred in refactor-split -> e', e);
               }
             })
             .catch(console.log)
@@ -164,35 +188,20 @@ exports.refactorBy = async (id, token, body) => {
         return Promise.all(resolved);
         break;
       case 'reorder':
+        /**
+         * Creates A New Playlist Reordered by body.by
+         */
         playlistNameRoot = body.playlistName + ' Reordered-By ' + body.by;
         const sortBy = constants.translatedRefactorBy[body.by].path;
         const sortedTrackUris = _.sortBy(tracksWithFeatures, value => {
           return _.get(value, sortBy);
         }).map((obj) => obj.track.uri);
-        return spotifyApi.createPlaylist(user.body.id, playlistNameRoot).then((playlist) => {
-          if (sortedTrackUris.length <= 100) {
-            return spotifyApi.addTracksToPlaylist(playlist.body.id, sortedTrackUris).catch(e => {
-              console.log('Error ocurred in creating playlist on reorder ', e)
-            });
-          } else {
-            let i,
-              j,
-              chunkOTracks,
-              chunkSize = 100,
-              allResolved = [];
-            for (i = 0, j = sortedTrackUris.length; i < j; i += chunkSize) {
-              chunkOTracks = sortedTrackUris.slice(i, i + chunkSize);
-              allResolved.push(spotifyApi.addTracksToPlaylist(playlist.body.id, chunkOTracks));
-              if (allResolved.length === Math.ceil(sortedTrackUris / chunkSize)) {
-                return Promise.all(allResolved).catch(e => {
-                  console.log('Error ocurred in creating playlist on reorder ', e)
-                });
-              }
-            }
-          }
-        }).catch(e => {
-          console.log('Error ocurred in creating playlist on reorder ', e)
-        });
+        try {
+          const playlist = await spotifyApi.createPlaylist(user.body.id, playlistNameRoot);
+          return addTracksToPlaylist(spotifyApi, sortedTrackUris, playlist.body.id);
+        } catch (e) {
+          console.log('error occurred in refactor-reorder -> e ', e);
+        }
         break;
       default:
         // No passed in method, only options are opinionated(smart) or simple numerical split;
@@ -201,7 +210,39 @@ exports.refactorBy = async (id, token, body) => {
             console.log('wip');
             break;
           case 'simple':
-            console.log('wip');
+          /**
+           * Clones playlist into two playlists each with half of the tracks of the original.
+           */
+          playlistNameRoot = body.playlistName + ' Simple Split';
+          const simpleSplitTrackSets = {};
+          let i,
+            j,
+            chunkOTracks,
+            chunkSize = Math.ceil(tracksWithFeatures.length / 2);
+          for (i = 0, j = tracksWithFeatures.length; i < j; i += chunkSize) {
+            chunkOTracks = tracksWithFeatures.slice(i, i + chunkSize);
+            const trackSetKey = i === 0 ? 'A' : 'B';
+            simpleSplitTrackSets[trackSetKey] = chunkOTracks;
+          }
+          const uniqueGroupByKeys = Object.keys(simpleSplitTrackSets);
+          const trackURISets = uniqueGroupByKeys.map((key) => simpleSplitTrackSets[key].map((obj) => obj.track.uri));
+          const resolved = [];
+          trackURISets.map((groupedPlaylist, index) => {
+            const newPlaylistName = playlistNameRoot + ' ' + uniqueGroupByKeys[index];
+            resolved.push(
+              spotifyApi
+              .createPlaylist(user.body.id, newPlaylistName)
+              .then(async (playlist) => {
+                try {
+                  return await addTracksToPlaylist(spotifyApi, groupedPlaylist, playlist.body.id);
+                } catch (e) {
+                  console.log('error occurred in refactor-split -> e', e);
+                }
+              })
+              .catch(console.log)
+            );
+          });
+          return Promise.all(resolved);
             break;
         }
         break;
@@ -210,13 +251,14 @@ exports.refactorBy = async (id, token, body) => {
     console.log(e);
   }
 };
-exports.getPlaylistTracks = async (id, token) => {
-  const spotifyApi = createSpotifyApi();
-  spotifyApi.setAccessToken(token);
-  return await getTracksForPlaylist(id, spotifyApi);
-};
 
-// PRIVATE FUNCTIONS
+
+
+// PRIVATE
+/**
+ * @description creates spotify api instance based on environment variables
+ * @returns {SpotifyApi} SpotifyApi instance
+ */
 function createSpotifyApi() {
   // https://github.com/thelinmichael/spotify-web-api-node
   return new SpotifyWebApi({
@@ -226,6 +268,12 @@ function createSpotifyApi() {
   });
 }
 
+// FORMATTING
+/**
+ * @description Strips larger track objects to only values required by UI/other API use cases.
+ * @param {*[]} items
+ * @returns {{id: string, uri: string, name: string, album: string, artist: string, added_at: string, popularity: number}}
+ */
 function formatTracks(items) {
   return items.map((item) => {
     const artistsNames = item.track.artists.map((artist) => artist.name);
@@ -241,6 +289,13 @@ function formatTracks(items) {
   });
 }
 
+// REUSED SPOTIFYAPI CALL USECASES
+/**
+ * @description fetches all tracks for given playlistid
+ * @param {string} id playlist id
+ * @param {SpotifyApi} spotifyApi
+ * @returns {*[]} tracks array
+ */
 async function getTracksForPlaylist(id, spotifyApi) {
   let done = false,
     offset = 0,
@@ -251,6 +306,8 @@ async function getTracksForPlaylist(id, spotifyApi) {
     });
     alltracks = alltracks.concat(formatTracks(response.body.items));
     if (response.body.next !== null) {
+      // bump offset and keep fetching tracks
+      // (next value is just the uri created by getPlaylistTracks with the adjusted offset listed below)
       offset = offset + 100;
     } else {
       done = true;
@@ -258,7 +315,13 @@ async function getTracksForPlaylist(id, spotifyApi) {
     }
   }
 }
-
+/**
+ * @description gets aduio features for each track in trackIds array,
+ * chunks calls if called with more than 100 trackIds
+ * @param {string[]} trackIds
+ * @param {SpotifyApi} spotifyApi
+ * @returns {*[]} audio_features array in matching order to trackIds
+ */
 async function getTracksFeatures(trackIds, spotifyApi) {
   if (trackIds.length <= 100) {
     const response = await spotifyApi.getAudioFeaturesForTracks(trackIds);
@@ -279,6 +342,32 @@ async function getTracksFeatures(trackIds, spotifyApi) {
         }
       } catch (e) {
         console.log('Error occurred in getTracksFeatures', e);
+      }
+    }
+  }
+}
+/**
+ * @description assuming an already existing playlist, adds tracks to said playlist,
+ * chunking out the requests to a max trackarray size of 100 if passed more than 100 tracks
+ * @param {SpotifyApi} spotifyApi
+ * @param {string[]} tracks array of track URIs
+ * @param {string} playlistId
+ * @returns {Promise<*>} add track response
+ */
+async function addTracksToPlaylist(spotifyApi, tracks, playlistId) {
+  if (tracks.length <= 100) {
+    return spotifyApi.addTracksToPlaylist(playlistId, tracks);
+  } else {
+    let i,
+      j,
+      chunkOTracks,
+      chunkSize = 100,
+      allResolved = [];
+    for (i = 0, j = tracks.length; i < j; i += chunkSize) {
+      chunkOTracks = tracks.slice(i, i + chunkSize);
+      allResolved.push(spotifyApi.addTracksToPlaylist(playlistId, chunkOTracks));
+      if (allResolved.length === Math.ceil(tracks / chunkSize)) {
+        return Promise.all(allResolved);
       }
     }
   }
