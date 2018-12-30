@@ -1,11 +1,15 @@
 {
-  "name": "portfolio-api",
+  "name": "sjb-2-api",
   "version": "1.0.0",
-  "description": "An Express API fueling my portfolio UI with data/computing inappropriate for a UI to handle.",
+  "description": "An express api for refactoring a spotify playlist library",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WilliamTOliver/SJB-2-API"
   },
   "author": "William T Oliver",
   "license": "MIT",

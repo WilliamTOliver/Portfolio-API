@@ -18,9 +18,9 @@ if (dotenvresult.error) {
 }
 
 // REMOTE CONNECTION
-// mongoose.connect(url);
+mongoose.connect(url);
 // LOCAL CONNECTION
-mongoose.connect(localUrl);
+// mongoose.connect(localUrl);
 mongoose.Promise = global.Promise;
 console.log('DB Connection Established at ' + localUrl)
 
