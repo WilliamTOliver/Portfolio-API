@@ -5,7 +5,7 @@ const express = require('express'),
   mongoose = require('mongoose'),
   authRoutes = require('./adapter/controllers/auth'),
   spotifyRoutes = require('./adapter/controllers/spotify'),
-  dotenvresult = require('dotenv').config(),
+  dotenvresult = require('dotenv').config({ silent: process.env.NODE_ENV === 'production' }),
   url = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${
     process.env.DB_HOST
   }`;
