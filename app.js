@@ -11,11 +11,6 @@ const express = require('express'),
   }`;
   localUrl = `mongodb://${process.env.DB_HOST_LOCAL}`;
 
-if (dotenvresult.error) {
-  throw dotenvresult.error;
-} else {
-  // console.log(dotenvresult.parsed)
-}
 
 // REMOTE CONNECTION
 mongoose.connect(url);
